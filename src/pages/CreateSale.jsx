@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { FiPlus, FiSearch, FiTrash2 } from "react-icons/fi";
 import { fetchProducts } from "../features/products/productSlice";
-import { createSale } from "../features/sales/salesSlice";
+import { createSale, updateSale } from "../features/sales/salesSlice";
+import api from "../services/api";
 import PageHeader from "../components/PageHeader";
 import { useDebounce } from "../hooks/useDebounce";
 import { money } from "../utils/format";
@@ -12,14 +13,17 @@ import { money } from "../utils/format";
 const CreateSale = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = Boolean(id);
   const products = useSelector((state) => state.products.items);
   const loading = useSelector((state) => state.sales.loading);
-  const { register, handleSubmit, control } = useForm({ defaultValues: { paymentMethod: "cash", discount: 0 } });
+  const { register, handleSubmit, control, reset } = useForm({ defaultValues: { paymentMethod: "cash", discount: 0, customerPhone: "" } });
   const [lines, setLines] = useState([{ productId: "", quantity: 1 }]);
   const [productSearch, setProductSearch] = useState("");
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [paymentStatus, setPaymentStatus] = useState("paid");
   const [paidAmount, setPaidAmount] = useState(0);
+  const [loadingSale, setLoadingSale] = useState(false);
   const debouncedProductSearch = useDebounce(productSearch, 900);
   const productSearchQuery = debouncedProductSearch.trim();
   const discount = Number(useWatch({ control, name: "discount" }) || 0);
@@ -28,6 +32,40 @@ const CreateSale = () => {
     if (productSearchQuery.length === 1) return;
     dispatch(fetchProducts({ limit: 100, stock: "available", search: productSearchQuery || undefined }));
   }, [dispatch, productSearchQuery]);
+
+  useEffect(() => {
+    if (!isEdit) return;
+    let active = true;
+    setLoadingSale(true);
+    api.get(`/sales/${id}`)
+      .then(({ data }) => {
+        if (!active) return;
+        const { sale, items } = data.data;
+        reset({
+          customerName: sale.customerName || "",
+          customerPhone: sale.customerPhone || "",
+          paymentMethod: sale.paymentMethod || "cash",
+          discount: sale.discount || 0,
+          address: sale.address || sale.note || "",
+        });
+        setPaymentStatus(sale.paymentStatus || "paid");
+        setPaidAmount(Number(sale.paidAmount || 0));
+        setLines(items.map((item) => ({ productId: item.productId, quantity: item.quantity })));
+        setSelectedProducts(items.map((item) => ({
+          _id: item.productId,
+          name: item.productName,
+          sku: item.productSku,
+          quantity: item.quantity,
+          sellingPrice: item.sellingPrice,
+        })));
+      })
+      .finally(() => {
+        if (active) setLoadingSale(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [id, isEdit, reset]);
 
   const productOptions = useMemo(() => {
     const selectedIds = new Set(lines.map((line) => line.productId).filter(Boolean));
@@ -69,15 +107,25 @@ const CreateSale = () => {
   }, []);
 
   const onSubmit = async (values) => {
-    await dispatch(createSale({ ...values, paymentStatus, discount: Number(values.discount || 0), paidAmount: effectivePaidAmount, products: lines.filter((line) => line.productId).map((line) => ({ productId: line.productId, quantity: Number(line.quantity) })) })).unwrap();
+    const payload = {
+      ...values,
+      customerPhone: values.customerPhone || "",
+      paymentStatus,
+      discount: Number(values.discount || 0),
+      paidAmount: effectivePaidAmount,
+      products: lines.filter((line) => line.productId).map((line) => ({ productId: line.productId, quantity: Number(line.quantity) })),
+    };
+    if (isEdit) await dispatch(updateSale({ id, payload })).unwrap();
+    else await dispatch(createSale(payload)).unwrap();
     navigate("/sales");
   };
 
   return (
     <>
-      <PageHeader title="Create Sale" subtitle="Multi-product checkout with automatic stock reduction." />
+      <PageHeader title={isEdit ? "Edit Sale" : "Create Sale"} subtitle="Multi-product checkout with automatic stock reduction." />
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 xl:grid-cols-[1fr_340px]">
         <div className="card p-5">
+          {loadingSale ? <p className="mb-4 text-sm text-slate-400">Loading invoice...</p> : null}
           <label className="relative mb-4 block">
             <FiSearch className="absolute left-3 top-3 text-slate-400" />
             <input className="input pl-10" placeholder="Search products by name, SKU, category, supplier" value={productSearch} onChange={(e) => setProductSearch(e.target.value)} />
@@ -115,6 +163,7 @@ const CreateSale = () => {
         <aside className="card h-fit p-5">
           <div className="space-y-4">
             <label className="block"><span className="label">Customer</span><input className="input mt-1" {...register("customerName")} placeholder="Walk-in Customer" /></label>
+            <label className="block"><span className="label">Phone Number</span><input className="input mt-1" {...register("customerPhone")} placeholder="Customer phone" /></label>
             <label className="block"><span className="label">Payment</span><select className="input mt-1" {...register("paymentMethod")}><option value="cash">Cash</option><option value="card">Card</option><option value="mobile_banking">Mobile Banking</option><option value="bank_transfer">Bank Transfer</option></select></label>
             <label className="block"><span className="label">Payment Status</span><select className="input mt-1" value={paymentStatus} onChange={handlePaymentStatusChange}><option value="paid">Paid</option><option value="partial">Partial</option><option value="unpaid">Unpaid</option></select></label>
             <label className="block"><span className="label">Discount</span><input className="input mt-1" type="number" step="0.01" {...register("discount")} /></label>
@@ -126,7 +175,7 @@ const CreateSale = () => {
             <div className="flex items-center justify-between"><span>Payable</span><span>{money(payableTotal)}</span></div>
             <div className="flex items-center justify-between font-bold text-rose-300"><span>Due</span><span>{money(dueAmount)}</span></div>
           </div>
-          <button className="btn btn-primary w-full" disabled={loading || lines.every((line) => !line.productId)}>{loading ? "Completing..." : "Complete Sale"}</button>
+          <button className="btn btn-primary w-full" disabled={loading || loadingSale || lines.every((line) => !line.productId)}>{loading ? "Saving..." : isEdit ? "Update Sale" : "Complete Sale"}</button>
         </aside>
       </form>
     </>

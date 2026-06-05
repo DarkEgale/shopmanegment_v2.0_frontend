@@ -56,6 +56,7 @@ export const printSaleInvoice = ({ sale, items = [], shopName = "Shop" }) => {
     <p>${escapeHtml(sale.invoiceNumber)}</p>
     <div class="meta">
       <p><strong>Customer:</strong> ${escapeHtml(sale.customerName)}</p>
+      <p><strong>Phone:</strong> ${escapeHtml(sale.customerPhone || "")}</p>
       <p><strong>Date:</strong> ${date(sale.createdAt)}</p>
       <p><strong>Address:</strong> ${escapeHtml(sale.address || sale.note || "")}</p>
       <p><strong>Sold By:</strong> ${escapeHtml(sale.soldBy)}</p>
@@ -77,7 +78,8 @@ export const printCustomerDues = (customers = []) => {
   const totalUnpaid = customers.reduce((sum, customer) => sum + Number(customer.totalUnpaid || 0), 0);
   const rows = customers.map((customer) => `
     <tr>
-      <td>${escapeHtml(customer._id || "Walk-in Customer")}</td>
+      <td>${escapeHtml(customer.customerName || customer._id?.name || customer._id || "Walk-in Customer")}</td>
+      <td>${escapeHtml(customer.customerPhone || customer._id?.phone || "")}</td>
       <td class="right">${escapeHtml(customer.invoices)}</td>
       <td class="right">${money(customer.totalBilled)}</td>
       <td class="right">${money(customer.totalPaid)}</td>
@@ -90,8 +92,8 @@ export const printCustomerDues = (customers = []) => {
     <h1>Customer Dues</h1>
     <p><strong>Total unpaid:</strong> ${money(totalUnpaid)}</p>
     <table>
-      <thead><tr><th>Customer</th><th>Invoices</th><th>Total Billed</th><th>Paid</th><th>Unpaid</th><th>Last Sale</th></tr></thead>
-      <tbody>${rows || "<tr><td colspan=\"6\">No customer dues.</td></tr>"}</tbody>
+      <thead><tr><th>Customer</th><th>Phone</th><th>Invoices</th><th>Total Billed</th><th>Paid</th><th>Unpaid</th><th>Last Sale</th></tr></thead>
+      <tbody>${rows || "<tr><td colspan=\"7\">No customer dues.</td></tr>"}</tbody>
     </table>
   `);
 };

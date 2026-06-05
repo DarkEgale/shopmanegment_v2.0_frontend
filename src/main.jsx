@@ -57,6 +57,7 @@ const App = () => {
             <Route path="/products/:id/edit" element={<ProductForm />} />
             <Route path="/sales" element={<Sales />} />
             <Route path="/sales/create" element={<CreateSale />} />
+            <Route path="/sales/:id/edit" element={<CreateSale />} />
             <Route path="/unpaid" element={<UnpaidSales />} />
             <Route path="/unpaid/customers" element={<UnpaidCustomers />} />
             <Route path="/statistics" element={<Statistics />} />
@@ -71,11 +72,9 @@ const App = () => {
 };
 
 createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <Provider store={store}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </Provider>
-  </React.StrictMode>
+  <Provider store={store}>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </Provider>
 );

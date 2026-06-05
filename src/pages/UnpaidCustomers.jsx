@@ -28,17 +28,18 @@ const UnpaidCustomers = () => {
       <div className="card mb-5 p-4">
         <label className="relative block">
           <FiSearch className="absolute left-3 top-3 text-slate-400" />
-          <input className="input pl-10" placeholder="Search customer dues" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className="input pl-10" placeholder="Search customer name or phone" value={search} onChange={(e) => setSearch(e.target.value)} />
         </label>
       </div>
       {loading ? <Skeleton rows={6} /> : unpaidCustomers.length === 0 ? <EmptyState title="No customer dues" text="Customers with unpaid balances will appear here." /> : (
         <div className="card overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="bg-slate-900 text-xs uppercase text-slate-400"><tr><th className="px-4 py-3">Customer</th><th>Invoices</th><th>Total Billed</th><th>Paid</th><th>Unpaid</th><th>Last Sale</th></tr></thead>
+          <table className="w-full min-w-[860px] text-left text-sm">
+            <thead className="bg-slate-900 text-xs uppercase text-slate-400"><tr><th className="px-4 py-3">Customer</th><th>Phone</th><th>Invoices</th><th>Total Billed</th><th>Paid</th><th>Unpaid</th><th>Last Sale</th></tr></thead>
             <tbody className="divide-y divide-slate-800">
               {unpaidCustomers.map((customer) => (
-                <tr key={customer._id} className="hover:bg-slate-900/70">
-                  <td className="px-4 py-3 font-bold text-white">{customer._id || "Walk-in Customer"}</td>
+                <tr key={`${customer._id?.name || customer.customerName}-${customer._id?.phone || customer.customerPhone}`} className="hover:bg-slate-900/70">
+                  <td className="px-4 py-3 font-bold text-white">{customer.customerName || customer._id?.name || "Walk-in Customer"}</td>
+                  <td>{customer.customerPhone || customer._id?.phone || "-"}</td>
                   <td>{customer.invoices}</td>
                   <td>{money(customer.totalBilled)}</td>
                   <td>{money(customer.totalPaid)}</td>

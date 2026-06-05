@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { FiPlus, FiPrinter, FiSearch } from "react-icons/fi";
+import { FiEdit2, FiPlus, FiPrinter, FiSearch } from "react-icons/fi";
 import api from "../services/api";
 import { fetchSales } from "../features/sales/salesSlice";
 import PageHeader from "../components/PageHeader";
@@ -33,16 +33,16 @@ const Sales = () => {
       <div className="card mb-5 p-4">
         <label className="relative block">
           <FiSearch className="absolute left-3 top-3 text-slate-400" />
-          <input className="input pl-10" placeholder="Search invoice, customer, address, product, SKU" value={filters.search} onChange={(e) => setFilters({ search: e.target.value, page: 1 })} />
+          <input className="input pl-10" placeholder="Search invoice, customer, phone, address, product, SKU" value={filters.search} onChange={(e) => setFilters({ search: e.target.value, page: 1 })} />
         </label>
       </div>
       {loading ? <Skeleton rows={6} /> : items.length === 0 ? <EmptyState title="No sales yet" text="Create a sale to update stock automatically." /> : (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] text-left text-sm">
-              <thead className="bg-slate-900 text-xs uppercase text-slate-400"><tr><th className="px-4 py-3">Invoice</th><th>Customer</th><th>Address</th><th>Total</th><th>Paid</th><th>Due</th><th>Status</th><th>Sold By</th><th>Date</th><th className="px-4">Print</th></tr></thead>
+              <thead className="bg-slate-900 text-xs uppercase text-slate-400"><tr><th className="px-4 py-3">Invoice</th><th>Customer</th><th>Phone</th><th>Address</th><th>Total</th><th>Paid</th><th>Due</th><th>Status</th><th>Sold By</th><th>Date</th><th className="px-4">Actions</th></tr></thead>
               <tbody className="divide-y divide-slate-800">
-                {items.map((sale) => <tr key={sale._id} className="hover:bg-slate-900/70"><td className="px-4 py-3 font-bold">{sale.invoiceNumber}</td><td>{sale.customerName}</td><td>{sale.address || sale.note || "-"}</td><td>{money(sale.totalAmount)}</td><td>{money(sale.paidAmount ?? sale.totalAmount)}</td><td className="font-bold text-rose-300">{money(sale.dueAmount)}</td><td>{sale.paymentStatus || "paid"}</td><td>{sale.soldBy}</td><td>{date(sale.createdAt)}</td><td className="px-4"><button type="button" className="btn btn-ghost px-2" title="Print invoice" onClick={() => printSale(sale._id)}><FiPrinter /></button></td></tr>)}
+                {items.map((sale) => <tr key={sale._id} className="hover:bg-slate-900/70"><td className="px-4 py-3 font-bold">{sale.invoiceNumber}</td><td>{sale.customerName}</td><td>{sale.customerPhone || "-"}</td><td>{sale.address || sale.note || "-"}</td><td>{money(sale.totalAmount)}</td><td>{money(sale.paidAmount ?? sale.totalAmount)}</td><td className="font-bold text-rose-300">{money(sale.dueAmount)}</td><td>{sale.paymentStatus || "paid"}</td><td>{sale.soldBy}</td><td>{date(sale.createdAt)}</td><td className="px-4"><div className="flex gap-2"><Link className="btn btn-ghost px-2" title="Edit sale" to={`/sales/${sale._id}/edit`}><FiEdit2 /></Link><button type="button" className="btn btn-ghost px-2" title="Print invoice" onClick={() => printSale(sale._id)}><FiPrinter /></button></div></td></tr>)}
               </tbody>
             </table>
           </div>

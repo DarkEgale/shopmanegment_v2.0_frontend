@@ -23,6 +23,12 @@ export const createSale = createAsyncThunk("sales/create", async (payload, { dis
   return data.data;
 });
 
+export const updateSale = createAsyncThunk("sales/update", async ({ id, payload }, { dispatch }) => {
+  const { data } = await api.put(`/sales/${id}`, payload);
+  dispatch(setToast({ type: "success", message: `Invoice ${data.data.sale.invoiceNumber} updated` }));
+  return data.data;
+});
+
 const salesSlice = createSlice({
   name: "sales",
   initialState: { items: [], unpaidItems: [], unpaidCustomers: [], latest: null, meta: {}, loading: false },
@@ -38,6 +44,11 @@ const salesSlice = createSlice({
         state.loading = false;
         state.latest = action.payload;
         state.items.unshift(action.payload.sale);
+      })
+      .addCase(updateSale.fulfilled, (state, action) => {
+        state.loading = false;
+        state.latest = action.payload;
+        state.items = state.items.map((item) => (item._id === action.payload.sale._id ? action.payload.sale : item));
       })
       .addCase(fetchUnpaidSales.fulfilled, (state, action) => {
         state.loading = false;

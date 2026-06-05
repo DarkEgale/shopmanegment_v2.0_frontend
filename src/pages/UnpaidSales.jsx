@@ -29,7 +29,7 @@ const UnpaidSales = () => {
       <div className="card mb-5 p-4">
         <label className="relative block">
           <FiSearch className="absolute left-3 top-3 text-slate-400" />
-          <input className="input pl-10" placeholder="Search invoice, customer, address, product, SKU" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className="input pl-10" placeholder="Search invoice, customer, phone, address, product, SKU" value={search} onChange={(e) => setSearch(e.target.value)} />
         </label>
       </div>
       {loading ? <Skeleton rows={6} /> : visibleItems.length === 0 ? <EmptyState title="No unpaid sales found" text="Partial and unpaid invoices will appear here." /> : (
@@ -39,6 +39,7 @@ const UnpaidSales = () => {
               <div className="grid gap-3 border-b border-slate-800 p-4 text-sm md:grid-cols-6">
                 <div><p className="label">Invoice</p><p className="font-bold text-white">{sale.invoiceNumber}</p></div>
                 <div><p className="label">Customer</p><p className="font-bold text-white">{sale.customerName}</p></div>
+                <div><p className="label">Phone</p><p>{sale.customerPhone || "-"}</p></div>
                 <div><p className="label">Address</p><p>{sale.address || sale.note || "-"}</p></div>
                 <div><p className="label">Paid</p><p>{money(sale.paidAmount)}</p></div>
                 <div><p className="label">Due</p><p className="font-bold text-rose-300">{money(sale.dueAmount)}</p></div>
